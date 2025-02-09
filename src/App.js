@@ -5,6 +5,7 @@ import Login from "./Login";
 import LoginForm from "./LoginForm";
 import Signup from "./Signup";
 import HomePage from "./HomePage";
+import VoiceDetector from "./Voice";
 const App = () => {
   return (
     <Router>
@@ -15,6 +16,7 @@ const App = () => {
       
         <Route path="/login-form" element={<LoginForm />} />
         <Route path="/homepage" element={<HomePage />} />
+        <Route path="/dashboard" element={<VoiceDetector/>}/>
       </Routes>
     </Router>
   );

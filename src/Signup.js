@@ -1,49 +1,87 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { baseUrl } from './constant';
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     phone: '',
     age: '',
     email: '',
-    guardianName: '',
-    guardianPhone: '',
-    guardianEmail: '',
     password: '',
-    confirmPassword: '',
+    guardian_name: '',
+    guardian_phone: '',
+    guardian_email: '',
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+    
+    // Basic validation
+    if (!formData.username || !formData.email || !formData.password) {
+      setError('Please fill in all required fields');
       return;
     }
-    // Save formData to localStorage or send to backend
-    console.log('Signup Data:', formData);
-    alert('Signup successful!');
-    navigate('/login'); // Redirect to login page
+
+    // Validate age
+    const age = parseInt(formData.age);
+    if (isNaN(age) || age < 0 || age > 150) {
+      setError('Please enter a valid age');
+      return;
+    }
+
+    // Prepare payload
+    const payload = {
+      ...formData,
+      age: parseInt(formData.age), // Convert age to number
+    };
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${baseUrl}/api/auth/signup`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data) {
+        alert('Signup successful!');
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError(
+        error.response?.data?.message || 
+        'An error occurred during signup. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={styles.container}>
-      <h2>Signup</h2>
+      <h2>Sign Up</h2>
+      {error && <div style={styles.error}>{error}</div>}
       <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
-          name="name"
-          placeholder="Name"
-          value={formData.name}
+          name="username"
+          placeholder="Username"
+          value={formData.username}
           onChange={handleChange}
-          required
           style={styles.input}
+          required
         />
         <input
           type="tel"
@@ -51,8 +89,8 @@ const Signup = () => {
           placeholder="Phone Number"
           value={formData.phone}
           onChange={handleChange}
-          required
           style={styles.input}
+          required
         />
         <input
           type="number"
@@ -60,8 +98,8 @@ const Signup = () => {
           placeholder="Age"
           value={formData.age}
           onChange={handleChange}
-          required
           style={styles.input}
+          required
         />
         <input
           type="email"
@@ -69,35 +107,8 @@ const Signup = () => {
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-          required
           style={styles.input}
-        />
-        <input
-          type="text"
-          name="guardianName"
-          placeholder="Guardian Name"
-          value={formData.guardianName}
-          onChange={handleChange}
           required
-          style={styles.input}
-        />
-        <input
-          type="tel"
-          name="guardianPhone"
-          placeholder="Guardian Phone Number"
-          value={formData.guardianPhone}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <input
-          type="email"
-          name="guardianEmail"
-          placeholder="Guardian Email"
-          value={formData.guardianEmail}
-          onChange={handleChange}
-          required
-          style={styles.input}
         />
         <input
           type="password"
@@ -105,23 +116,49 @@ const Signup = () => {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          required
           style={styles.input}
+          required
         />
         <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Re-enter Password"
-          value={formData.confirmPassword}
+          type="text"
+          name="guardian_name"
+          placeholder="Guardian Name"
+          value={formData.guardian_name}
           onChange={handleChange}
-          required
           style={styles.input}
+          required
         />
-        <button type="submit" style={styles.button}>
-          Signup
+        <input
+          type="tel"
+          name="guardian_phone"
+          placeholder="Guardian Phone"
+          value={formData.guardian_phone}
+          onChange={handleChange}
+          style={styles.input}
+          required
+        />
+        <input
+          type="email"
+          name="guardian_email"
+          placeholder="Guardian Email"
+          value={formData.guardian_email}
+          onChange={handleChange}
+          style={styles.input}
+          required
+        />
+        <button 
+          type="submit" 
+          style={{...styles.button, opacity: loading ? 0.7 : 1}}
+          disabled={loading}
+        >
+          {loading ? 'Signing up...' : 'Sign Up'}
         </button>
       </form>
-      <button onClick={() => navigate('/login')} style={styles.button}>
+      <button 
+        onClick={() => navigate('/login')} 
+        style={styles.button}
+        disabled={loading}
+      >
         Back to Login
       </button>
     </div>
@@ -134,27 +171,42 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     padding: '20px',
+    maxWidth: '500px',
+    margin: '0 auto',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    width: '300px',
+    width: '100%',
   },
   input: {
     margin: '10px 0',
-    padding: '10px',
+    padding: '12px',
     borderRadius: '5px',
     border: '1px solid #ccc',
+    fontSize: '16px',
   },
   button: {
     margin: '10px 0',
-    padding: '10px',
+    padding: '12px',
     borderRadius: '5px',
     border: 'none',
     backgroundColor: '#007bff',
     color: '#fff',
     cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '500',
   },
+  error: {
+    color: '#dc3545',
+    marginBottom: '15px',
+    textAlign: 'center',
+    padding: '10px',
+    borderRadius: '5px',
+    backgroundColor: '#f8d7da',
+    border: '1px solid #f5c6cb',
+    width: '100%',
+  }
 };
 
 export default Signup;
